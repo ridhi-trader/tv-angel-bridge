@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TV Bridge — AG Technicals</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #21262d;
+    --accent: #f7931a;
+    --accent2: #10b981;
+    --red: #ef4444;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --radius: 10px;
+    --font: 'Inter', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+
+  /* NAV */
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .logo { font-size: 18px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
+  .logo span { color: var(--text); }
+  #nav-actions { display: flex; gap: 12px; align-items: center; }
+  .btn { padding: 8px 18px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; font-weight: 600; transition: opacity 0.15s; }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-green { background: var(--accent2); color: #fff; }
+
+  /* PAGES */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* AUTH */
+  #auth-page { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 65px); }
+  .auth-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 40px; width: 380px; max-width: 95vw; }
+  .auth-box h2 { margin-bottom: 24px; font-size: 22px; }
+  .auth-tabs { display: flex; gap: 0; margin-bottom: 24px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .auth-tab { flex: 1; padding: 10px; background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 14px; font-weight: 600; }
+  .auth-tab.active { background: var(--accent); color: #000; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .form-group input, .form-group select { width: 100%; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; outline: none; }
+  .form-group input:focus { border-color: var(--accent); }
+  .error-msg { color: var(--red); font-size: 13px; margin-top: 12px; }
+
+  /* DASHBOARD */
+  #dashboard-page { padding: 32px; max-width: 1100px; margin: 0 auto; }
+  .section-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+  
+  /* WEBHOOK BOX */
+  .webhook-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 28px; }
+  .webhook-url { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; font-family: monospace; font-size: 13px; color: var(--accent); word-break: break-all; margin: 12px 0; }
+  .copy-btn { background: var(--border); border: none; color: var(--text); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+  .copy-btn:hover { background: var(--accent); color: #000; }
+
+  /* PAYLOAD EXAMPLE */
+  .payload-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-top: 12px; }
+  .payload-box pre { font-family: monospace; font-size: 12px; color: #7ee787; white-space: pre-wrap; }
+
+  /* BROKER FORM */
+  .broker-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 28px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+  
+  /* TRADE LOGS */
+  .logs-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 28px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 12px 16px; background: var(--bg); color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+  td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .badge-buy { background: rgba(16,185,129,0.15); color: var(--accent2); }
+  .badge-sell { background: rgba(239,68,68,0.15); color: var(--red); }
+  .badge-success { background: rgba(16,185,129,0.15); color: var(--accent2); }
+  .badge-failed { background: rgba(239,68,68,0.15); color: var(--red); }
+  .badge-paper { background: rgba(247,147,26,0.15); color: var(--accent); }
+  .empty-state { text-align: center; padding: 48px; color: var(--muted); }
+  
+  /* STATS */
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
+  @media (max-width: 600px) { .stats-row { grid-template-columns: 1fr 1fr; } }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .stat-card .num { font-size: 28px; font-weight: 700; color: var(--accent); }
+  .stat-card .lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* TOAST */
+  #toast { position: fixed; bottom: 24px; right: 24px; background: var(--accent2); color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; display: none; z-index: 999; }
+  #toast.error { background: var(--red); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">TV<span>Bridge</span></div>
+  <div id="nav-actions">
+    <span id="nav-user" style="font-size:13px;color:var(--muted)"></span>
+    <button class="btn btn-outline" id="logout-btn" style="display:none" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<!-- AUTH PAGE -->
+<div id="auth-page" class="page active">
+  <div class="auth-box">
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('login')">Login</button>
+      <button class="auth-tab" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <!-- Login Form -->
+    <div id="login-form">
+      <div class="form-group"><label>Email</label><input type="email" id="l-email" placeholder="you@email.com"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="l-password" placeholder="••••••••"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="doLogin()">Login</button>
+      <div class="error-msg" id="login-err"></div>
+    </div>
+
+    <!-- Register Form -->
+    <div id="register-form" style="display:none">
+      <div class="form-group"><label>Name</label><input type="text" id="r-name" placeholder="Your Name"></div>
+      <div class="form-group"><label>Email</label><input type="email" id="r-email" placeholder="you@email.com"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="r-password" placeholder="Min 8 chars"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="doRegister()">Create Account</button>
+      <div class="error-msg" id="register-err"></div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard-page" class="page">
+
+  <!-- Stats -->
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card"><div class="num" id="stat-total">0</div><div class="lbl">Total Trades</div></div>
+    <div class="stat-card"><div class="num" id="stat-today">0</div><div class="lbl">Today's Trades</div></div>
+    <div class="stat-card"><div class="num" id="stat-plan" style="font-size:18px;margin-top:4px">Free</div><div class="lbl">Current Plan</div></div>
+  </div>
+
+  <!-- Webhook URL -->
+  <div class="webhook-box">
+    <div class="section-title">📡 Your TradingView Webhook URL</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:8px">Paste this URL in TradingView Alert → Webhook URL</p>
+    <div class="webhook-url" id="webhook-url">Loading...</div>
+    <button class="copy-btn" onclick="copyWebhook()">📋 Copy URL</button>
+
+    <div style="margin-top:20px">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px">📋 Alert Message Format (paste in TradingView "Message" box):</div>
+      <div class="payload-box">
+        <pre id="payload-example">{
+  "token": "YOUR_WEBHOOK_TOKEN",
+  "symbol": "NIFTY-EQ",
+  "action": "BUY",
+  "qty": 50,
+  "order_type": "MARKET",
+  "exchange": "NSE",
+  "product": "INTRADAY",
+  "price": 0,
+  "symbol_token": "99926000"
+}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Broker Config -->
+  <div class="broker-box">
+    <div class="section-title">🔑 Angel One API Config</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Get API key from <a href="https://smartapi.angelbroking.com/" target="_blank" style="color:var(--accent)">smartapi.angelbroking.com</a></p>
+    <div class="grid-2">
+      <div class="form-group"><label>API Key</label><input type="text" id="b-apikey" placeholder="Your SmartAPI key"></div>
+      <div class="form-group"><label>Client ID</label><input type="text" id="b-clientid" placeholder="Angel Client ID (e.g. A12345)"></div>
+      <div class="form-group"><label>Password / PIN</label><input type="password" id="b-password" placeholder="Trading password"></div>
+      <div class="form-group"><label>TOTP Secret <span style="color:var(--muted);font-size:11px">(optional — for 2FA)</span></label><input type="text" id="b-totp" placeholder="Base32 TOTP secret"></div>
+    </div>
+    <button class="btn btn-green" onclick="saveBroker()">Save API Config</button>
+    <div id="broker-status" style="font-size:13px;margin-top:12px;color:var(--muted)"></div>
+  </div>
+
+  <!-- Trade Logs -->
+  <div class="section-title">📊 Trade Log</div>
+  <div class="logs-box">
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Symbol</th>
+          <th>Action</th>
+          <th>Qty</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>Order ID</th>
+        </tr>
+      </thead>
+      <tbody id="trade-tbody">
+        <tr><td colspan="7" class="empty-state">No trades yet. Send a TradingView alert to get started!</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <button class="btn btn-outline" onclick="loadTrades()" style="margin-bottom:32px">↻ Refresh Trades</button>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = '';
+let TOKEN = localStorage.getItem('tv_token');
+let USER = null;
+
+// ——— INIT ———
+window.onload = () => { if (TOKEN) initDashboard(); };
+
+// ——— AUTH ———
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (tab==='login'&&i===0)||(tab==='register'&&i===1)));
+  document.getElementById('login-form').style.display = tab==='login' ? '' : 'none';
+  document.getElementById('register-form').style.display = tab==='register' ? '' : 'none';
+}
+
+async function doLogin() {
+  const email = document.getElementById('l-email').value.trim();
+  const password = document.getElementById('l-password').value;
+  const r = await fetch(`${API}/api/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email, password}) });
+  const data = await r.json();
+  if (!r.ok) { document.getElementById('login-err').textContent = data.error; return; }
+  TOKEN = data.token; USER = data.user;
+  localStorage.setItem('tv_token', TOKEN);
+  initDashboard();
+}
+
+async function doRegister() {
+  const name = document.getElementById('r-name').value.trim();
+  const email = document.getElementById('r-email').value.trim();
+  const password = document.getElementById('r-password').value;
+  const r = await fetch(`${API}/api/auth/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, email, password}) });
+  const data = await r.json();
+  if (!r.ok) { document.getElementById('register-err').textContent = data.error; return; }
+  TOKEN = data.token; USER = data.user;
+  localStorage.setItem('tv_token', TOKEN);
+  initDashboard();
+}
+
+function logout() {
+  localStorage.removeItem('tv_token');
+  TOKEN = null; USER = null;
+  showPage('auth-page');
+  document.getElementById('logout-btn').style.display = 'none';
+  document.getElementById('nav-user').textContent = '';
+}
+
+// ——— DASHBOARD ———
+async function initDashboard() {
+  const r = await fetch(`${API}/api/auth/me`, { headers: { Authorization: `Bearer ${TOKEN}` } });
+  if (!r.ok) { logout(); return; }
+  USER = await r.json();
+  document.getElementById('nav-user').textContent = USER.name;
+  document.getElementById('logout-btn').style.display = '';
+  
+  const webhookUrl = `${window.location.origin}/webhook/${USER.webhook_token}`;
+  document.getElementById('webhook-url').textContent = webhookUrl;
+  document.getElementById('payload-example').textContent = JSON.stringify({
+    token: USER.webhook_token,
+    symbol: "NIFTY-EQ",
+    action: "BUY",
+    qty: 50,
+    order_type: "MARKET",
+    exchange: "NSE",
+    product: "INTRADAY",
+    price: 0,
+    symbol_token: "99926000"
+  }, null, 2);
+  
+  document.getElementById('stat-plan').textContent = USER.plan.charAt(0).toUpperCase() + USER.plan.slice(1);
+  
+  showPage('dashboard-page');
+  loadBrokerConfig();
+  loadTrades();
+}
+
+async function saveBroker() {
+  const payload = {
+    api_key: document.getElementById('b-apikey').value.trim(),
+    client_id: document.getElementById('b-clientid').value.trim(),
+    password: document.getElementById('b-password').value,
+    totp_secret: document.getElementById('b-totp').value.trim()
+  };
+  const r = await fetch(`${API}/api/broker/save`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${TOKEN}`}, body: JSON.stringify(payload) });
+  const data = await r.json();
+  if (r.ok) { toast('Broker config saved ✅'); document.getElementById('broker-status').textContent = 'Angel One connected'; }
+  else { toast(data.error || 'Save failed', true); }
+}
+
+async function loadBrokerConfig() {
+  const r = await fetch(`${API}/api/broker/config`, { headers: { Authorization: `Bearer ${TOKEN}` } });
+  const data = await r.json();
+  if (data.length) {
+    document.getElementById('broker-status').textContent = `✅ Angel One connected — Client: ${data[0].client_id}`;
+    document.getElementById('b-clientid').placeholder = data[0].client_id;
+  }
+}
+
+async function loadTrades() {
+  const r = await fetch(`${API}/api/trades`, { headers: { Authorization: `Bearer ${TOKEN}` } });
+  const trades = await r.json();
+  const tbody = document.getElementById('trade-tbody');
+  
+  if (!trades.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No trades yet. Send a TradingView alert to get started!</td></tr>';
+    document.getElementById('stat-total').textContent = 0;
+    document.getElementById('stat-today').textContent = 0;
+    return;
+  }
+  
+  const today = new Date().toDateString();
+  document.getElementById('stat-total').textContent = trades.length;
+  document.getElementById('stat-today').textContent = trades.filter(t => new Date(t.created_at).toDateString() === today).length;
+  
+  tbody.innerHTML = trades.map(t => `
+    <tr>
+      <td style="color:var(--muted)">${new Date(t.created_at).toLocaleString('en-IN')}</td>
+      <td style="font-weight:600">${t.symbol || '-'}</td>
+      <td><span class="badge ${t.action==='BUY'?'badge-buy':'badge-sell'}">${t.action}</span></td>
+      <td>${t.qty}</td>
+      <td style="color:var(--muted)">${t.order_type}</td>
+      <td><span class="badge badge-${t.status}">${t.status.toUpperCase()}</span></td>
+      <td style="font-family:monospace;font-size:12px;color:var(--muted)">${t.broker_order_id || (t.error ? '❌ '+t.error.slice(0,30) : '—')}</td>
+    </tr>
+  `).join('');
+}
+
+// ——— UTILS ———
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function copyWebhook() {
+  const url = document.getElementById('webhook-url').textContent;
+  navigator.clipboard.writeText(url);
+  toast('Webhook URL copied!');
+}
+
+function toast(msg, isError=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = isError ? 'error' : '';
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+</script>
+</body>
+</html>
