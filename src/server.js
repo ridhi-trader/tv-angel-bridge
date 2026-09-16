@@ -28,7 +28,7 @@ app.use('/webhook', webhookRoutes);
 app.use('/api/trades', tradeRoutes);
 
 // Serve frontend
-app.get('*', (req, res) => {
+app.get('/{*path}', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
